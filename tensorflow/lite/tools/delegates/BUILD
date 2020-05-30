@@ -70,7 +70,9 @@ cc_library(
         "//tensorflow:ios": [
             "//tensorflow/lite/delegates/gpu:metal_delegate",
         ],
-        "//conditions:default": [],
+        "//conditions:default": [
+            "//tensorflow/lite/delegates/gpu:delegate",
+        ],
     }),
     alwayslink = 1,
 )
