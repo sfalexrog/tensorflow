@@ -46,7 +46,7 @@ limitations under the License.
 #include "tensorflow/lite/string_util.h"
 #include "tensorflow/lite/tools/evaluation/utils.h"
 
-#if defined(__ANDROID__)
+#if defined(__linux__)
 #include "tensorflow/lite/delegates/gpu/delegate.h"
 #endif
 
@@ -61,7 +61,7 @@ using TfLiteDelegatePtr = tflite::Interpreter::TfLiteDelegatePtr;
 using TfLiteDelegatePtrMap = std::map<std::string, TfLiteDelegatePtr>;
 
 TfLiteDelegatePtr CreateGPUDelegate(Settings* s) {
-#if defined(__ANDROID__)
+#if defined(__linux__)
   TfLiteGpuDelegateOptionsV2 gpu_opts = TfLiteGpuDelegateOptionsV2Default();
   gpu_opts.inference_preference =
       TFLITE_GPU_INFERENCE_PREFERENCE_SUSTAINED_SPEED;

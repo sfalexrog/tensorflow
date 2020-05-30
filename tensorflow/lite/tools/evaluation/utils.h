@@ -21,8 +21,10 @@ limitations under the License.
 #include <unordered_set>
 #include <vector>
 
-#if defined(__ANDROID__)
+#if defined(__linux__)
 #include "tensorflow/lite/delegates/gpu/delegate.h"
+#endif
+#if defined(__ANDROID__)
 #include "tensorflow/lite/delegates/nnapi/nnapi_delegate.h"
 #if (defined(__arm__) || defined(__aarch64__))
 #include "tensorflow/lite/experimental/delegates/hexagon/hexagon_delegate.h"
@@ -67,7 +69,7 @@ TfLiteDelegatePtr CreateNNAPIDelegate(StatefulNnApiDelegate::Options options);
 #endif
 
 TfLiteDelegatePtr CreateGPUDelegate();
-#if defined(__ANDROID__)
+#if defined(__linux__)
 TfLiteDelegatePtr CreateGPUDelegate(TfLiteGpuDelegateOptionsV2* options);
 #endif
 

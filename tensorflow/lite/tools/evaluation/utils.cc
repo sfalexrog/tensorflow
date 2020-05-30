@@ -114,15 +114,15 @@ TfLiteDelegatePtr CreateNNAPIDelegate(StatefulNnApiDelegate::Options options) {
 }
 #endif  // defined(__ANDROID__)
 
-#if defined(__ANDROID__)
+#if defined(__linux__)
 TfLiteDelegatePtr CreateGPUDelegate(TfLiteGpuDelegateOptionsV2* options) {
   return TfLiteDelegatePtr(TfLiteGpuDelegateV2Create(options),
                            &TfLiteGpuDelegateV2Delete);
 }
-#endif  // defined(__ANDROID__)
+#endif  // defined(__linux__)
 
 TfLiteDelegatePtr CreateGPUDelegate() {
-#if defined(__ANDROID__)
+#if defined(__linux__)
   TfLiteGpuDelegateOptionsV2 options = TfLiteGpuDelegateOptionsV2Default();
   options.inference_priority1 = TFLITE_GPU_INFERENCE_PRIORITY_MIN_LATENCY;
   options.inference_preference =
@@ -131,7 +131,7 @@ TfLiteDelegatePtr CreateGPUDelegate() {
   return CreateGPUDelegate(&options);
 #else
   return CreateNullDelegate();
-#endif  // defined(__ANDROID__)
+#endif  // defined(__linux__)
 }
 
 TfLiteDelegatePtr CreateHexagonDelegate(

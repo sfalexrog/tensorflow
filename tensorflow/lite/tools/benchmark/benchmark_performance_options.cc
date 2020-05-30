@@ -23,8 +23,10 @@ limitations under the License.
 
 #include "tensorflow/core/util/stats_calculator.h"
 #include "tensorflow/lite/c/common.h"
-#if defined(__ANDROID__)
+#if defined(__linux__)
 #include "tensorflow/lite/delegates/gpu/delegate.h"
+#endif
+#if defined(__ANDROID__)
 #include "tensorflow/lite/nnapi/nnapi_util.h"
 #endif
 #include "tensorflow/lite/profiling/time.h"
@@ -53,7 +55,7 @@ std::string MultiRunStatsRecorder::PerfOptionName(
 #endif
 
   if (params.Get<bool>("use_gpu")) {
-#if defined(__ANDROID__)
+#if defined(__linux__)
     if (params.Get<bool>("gpu_precision_loss_allowed")) {
       return "gpu-fp16";
     } else {
@@ -227,8 +229,10 @@ bool BenchmarkPerformanceOptions::HasOption(const std::string& option) const {
 void BenchmarkPerformanceOptions::ResetPerformanceOptions() {
   single_option_run_params_->Set<int32_t>("num_threads", 1);
   single_option_run_params_->Set<bool>("use_gpu", false);
-#if defined(__ANDROID__)
+#if defined(__linux__)
   single_option_run_params_->Set<bool>("gpu_precision_loss_allowed", true);
+#endif
+#if defined(__ANDROID__)
   single_option_run_params_->Set<bool>("use_nnapi", false);
   single_option_run_params_->Set<std::string>("nnapi_accelerator_name", "");
   single_option_run_params_->Set<bool>("disable_nnapi_cpu", false);
@@ -272,7 +276,7 @@ void BenchmarkPerformanceOptions::CreatePerformanceOptions() {
   }
 
   if (benchmark_all || HasOption("gpu")) {
-#if defined(__ANDROID__)
+#if defined(__linux__)
     const std::vector<bool> allow_precision_loss = {true, false};
     for (const auto precision_loss : allow_precision_loss) {
       BenchmarkParams params;
