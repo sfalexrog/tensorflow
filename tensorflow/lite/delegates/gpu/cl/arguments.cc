@@ -25,6 +25,9 @@ namespace tflite {
 namespace gpu {
 namespace cl {
 namespace {
+
+constexpr char kArgsPrefix[] = "args.";
+
 bool IsWordSymbol(char symbol) {
   return absl::ascii_isalnum(symbol) || symbol == '_';
 }

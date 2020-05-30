@@ -91,8 +91,6 @@ class Arguments {
                           const std::vector<std::string>& member_names,
                           std::string* code);
 
-  static constexpr char kArgsPrefix[] = "args.";
-
   struct IntValue {
     int value;
 
