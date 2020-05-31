@@ -20,6 +20,9 @@ limitations under the License.
 #include "tensorflow/lite/delegates/gpu/gl/gl_call.h"
 #include "tensorflow/lite/delegates/gpu/gl/request_gpu_info.h"
 
+#include <dlfcn.h>
+#include <fcntl.h>
+
 namespace tflite {
 namespace gpu {
 namespace gl {
@@ -39,6 +42,27 @@ bool IsPlatformDisplaySupported() {
   return supported;
 }
 
+struct gbm_device;
+
+absl::Status GetGbmDevice(gbm_device** device) {
+  using FnGbmCreateDevice = gbm_device*(int);
+  static void* gbmLibHandle = dlopen("libgbm.so", RTLD_LAZY);
+  if (!gbmLibHandle) {
+    return absl::InternalError("libgbm.so not available");
+  }
+  auto* gbm_create_device =
+    reinterpret_cast<FnGbmCreateDevice*>(gbmLibHandle, "gbm_create_device");
+  int fd = open("/dev/dri/renderD128", O_RDWR);
+  if (fd < 0) {
+    return absl::InternalError("Failed to open render node");
+  }
+  *device = gbm_create_device(fd);
+  if (*device == nullptr) {
+    return absl::InternalError("GBM error");
+  }
+  return absl::OkStatus();
+}
+
 absl::Status InitPlatformDisplay(EGLDisplay* egl_display, EGLenum platform) {
   static auto* egl_get_platform_display_ext = 
     reinterpret_cast<PFNEGLGETPLATFORMDISPLAYEXTPROC>(
@@ -46,8 +70,10 @@ absl::Status InitPlatformDisplay(EGLDisplay* egl_display, EGLenum platform) {
   if (!IsPlatformDisplaySupported()) {
     return absl::InternalError("Not supported: EGL_EXT_platform_base");
   }
+  gbm_device *device = nullptr;
+  RETURN_IF_ERROR(GetGbmDevice(&device));
   RETURN_IF_ERROR(TFLITE_GPU_CALL_EGL(*egl_get_platform_display_ext, egl_display,
-                                      platform, nullptr, nullptr));
+                                      platform, device, nullptr));
   if (*egl_display == EGL_NO_DISPLAY) {
     return absl::UnavailableError("eglGetPlatformDisplayEXT returned EGL_NO_DISPLAY");
   }
