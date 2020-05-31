@@ -28,6 +28,38 @@ namespace {
 // TODO(akulik): detect power management event when all contexts are destroyed
 // and OpenGL ES is reinitialized. See eglMakeCurrent
 
+bool IsPlatformDisplaySupported() {
+  static auto supported = []() -> bool {
+    const char* extensions = eglQueryString(EGL_NO_DISPLAY, EGL_EXTENSIONS);
+    if (extensions && std::strstr(extensions, "EGL_EXT_platform_base")) {
+      return true;
+    }
+    return false;
+  }();
+  return supported;
+}
+
+absl::Status InitPlatformDisplay(EGLDisplay* egl_display, EGLenum platform) {
+  static auto* egl_get_platform_display_ext = 
+    reinterpret_cast<PFNEGLGETPLATFORMDISPLAYEXTPROC>(
+      eglGetProcAddress("eglGetPlatformDisplayEXT"));
+  if (!IsPlatformDisplaySupported()) {
+    return absl::InternalError("Not supported: EGL_EXT_platform_base");
+  }
+  RETURN_IF_ERROR(TFLITE_GPU_CALL_EGL(*egl_get_platform_display_ext, egl_display,
+                                      platform, nullptr, nullptr));
+  if (*egl_display == EGL_NO_DISPLAY) {
+    return absl::UnavailableError("eglGetPlatformDisplayEXT returned EGL_NO_DISPLAY");
+  }
+  bool is_initialized;
+  RETURN_IF_ERROR(TFLITE_GPU_CALL_EGL(eglInitialize, &is_initialized,
+                                      *egl_display, nullptr, nullptr));
+  if (!is_initialized) {
+    return absl::InternalError("No EGL error, but eglInitialize failed");
+  }
+  return absl::OkStatus();
+}
+
 absl::Status InitDisplay(EGLDisplay* egl_display) {
   RETURN_IF_ERROR(
       TFLITE_GPU_CALL_EGL(eglGetDisplay, egl_display, EGL_DEFAULT_DISPLAY));
@@ -75,7 +107,9 @@ absl::Status EglEnvironment::Init() {
     context_ =
         EglContext(eglGetCurrentContext(), display_, EGL_NO_CONFIG_KHR, false);
   } else {
-    RETURN_IF_ERROR(InitDisplay(&display_));
+    if (!InitDisplay(&display_).ok()) {
+      RETURN_IF_ERROR(InitPlatformDisplay(&display_, EGL_MESA_platform_gbm));
+    }
 
     absl::Status status = InitConfiglessContext();
     if (!status.ok()) {
